@@ -7,6 +7,7 @@ import DonationPage from "./pages/Donation";
 import MapPage from "./pages/Map";
 import ProfilePage from "./pages/Profile";
 import SettingsPage from "./pages/Settings";
+import HistoryPage from "./pages/HistoryPage"; 
 
 const App = () => {
   const myRouter = createBrowserRouter([
@@ -41,6 +42,10 @@ const App = () => {
     { 
       path: "/settings", 
       element: <SettingsPage /> 
+    },
+    { 
+      path: "/history", 
+      element: <HistoryPage /> 
     },
   ]);
 
