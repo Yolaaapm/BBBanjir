@@ -16,6 +16,10 @@ const App = () => {
       element: <DashboardPage />,
     },
     {
+      path: "/dashboard", 
+      element: <DashboardPage />,
+    },
+    {
       path: "/login",
       element: <SignInPage />,
     },
