@@ -11,24 +11,28 @@ const MainLayout = (props) => {
   const { user, logout } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   
-  // State untuk mengontrol buka/tutup dropdown profile di header
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Daftar menu lengkap dengan hak akses (roles) sesuai dokumen SKPL
+  // --- FUNGSI TANGGAL OTOMATIS ---
+  const getCurrentDate = () => {
+    const date = new Date();
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    // Menghasilkan format seperti: 9 Jan 2026
+    return date.toLocaleDateString('id-ID', options);
+  };
+
   const menu = [
     { id: 1, name: "Dashboard", icon: <Icon.Overview />, link: "/", roles: ["admin", "masyarakat"] },
     { id: 2, name: "Lapor Banjir", icon: <Icon.Report />, link: "/report", roles: ["masyarakat"] },
     { id: 3, name: "Donasi", icon: <Icon.Donation />, link: "/donation", roles: ["masyarakat"] },
     { id: 4, name: "Peta Banjir", icon: <Icon.Map />, link: "/map", roles: ["admin", "masyarakat"] },
-    { id: 5, name: "Kelola Laporan", icon: <Icon.Setting />, link: "/manage-reports", roles: ["admin"] },
+    { id: 5, name: "Kelola Laporan", icon: <Icon.Setting />, link: "/kelola_laporan", roles: ["admin"] },
   ];
 
-  // Filter menu: Hanya menampilkan menu yang boleh diakses oleh role user saat ini
   const filteredMenu = menu.filter((item) => item.roles.includes(user?.role));
 
   return (
     <div className={`flex min-h-screen w-full ${theme.name} bg-special-mainBg`}>
-      {/* Sidebar Statis di Sisi Kiri */}
       <aside className="w-64 bg-defaultBlack text-white flex flex-col fixed h-full z-20">
         <div className="p-8">
           <Logo variant="white" />
@@ -51,7 +55,6 @@ const MainLayout = (props) => {
           ))}
         </nav>
 
-        {/* Tombol Logout Utama di Sidebar */}
         <div className="p-6 border-t border-special-bg3">
           <button 
             onClick={logout} 
@@ -63,7 +66,6 @@ const MainLayout = (props) => {
         </div>
       </aside>
 
-      {/* Area Konten Utama */}
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
         <header className="h-20 bg-white border-b border-gray-05 px-8 flex items-center justify-between sticky top-0 z-10">
           <div>
@@ -76,10 +78,12 @@ const MainLayout = (props) => {
           <div className="flex items-center gap-4 relative">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-defaultBlack uppercase">{user?.name || "User"}</p>
-              <p className="text-[10px] text-gray-02">6 Jan 2026</p>
+              
+              {/* --- PERUBAHAN DI SINI: Tanggal Otomatis --- */}
+              <p className="text-[10px] text-gray-02">{getCurrentDate()}</p>
+              
             </div>
             
-            {/* Tombol Avatar untuk memicu Dropdown */}
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold hover:ring-4 ring-blue-100 transition-all focus:outline-none"
@@ -87,7 +91,6 @@ const MainLayout = (props) => {
               {user?.name?.charAt(0) || "U"}
             </button>
 
-            {/* Dropdown Menu Profile + Setting (Tanpa tombol Logout ganda) */}
             {showProfileMenu && (
               <div className="absolute right-0 top-12 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30">
                 <div className="px-4 py-2 border-b border-gray-50 mb-1">
@@ -115,7 +118,6 @@ const MainLayout = (props) => {
           </div>
         </header>
 
-        {/* Tempat merender konten halaman (Dashboard, Report, dll) */}
         <main className="p-8">
           {children}
         </main>

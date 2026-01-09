@@ -8,6 +8,7 @@ import MapPage from "./pages/Map";
 import ProfilePage from "./pages/Profile";
 import SettingsPage from "./pages/Settings";
 import HistoryPage from "./pages/HistoryPage"; 
+import Kelola_Laporan from "./pages/Kelola_Laporan";
 
 const App = () => {
   const myRouter = createBrowserRouter([
@@ -50,6 +51,12 @@ const App = () => {
     { 
       path: "/history", 
       element: <HistoryPage /> 
+    },
+
+    {
+      path: "/Kelola_Laporan",
+      element: <Kelola_Laporan/>
+
     },
   ]);
 

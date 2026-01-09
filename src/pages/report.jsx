@@ -28,28 +28,29 @@ const ReportPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validasi sederhana
     if (formData.location && formData.waterLevel) {
+      // 1. BUAT DATA TERPISAH (Jangan digabung dalam satu string)
+      // Gunakan nama key "lokasi", "debit", dan "deskripsi" 
+      // agar sesuai dengan kolom di tabel Kelola_Laporan
       const reportData = {
-        location: formData.location,
-        // Format deskripsi agar seragam dengan dashboard
-        description: `Tinggi air mencapai ${formData.waterLevel} cm. ${formData.description}`
+        lokasi: formData.location,
+        debit: formData.waterLevel + " CM",
+        deskripsi: formData.description || "-",
+        status: parseInt(formData.waterLevel) > 100 ? "Bahaya" : parseInt(formData.waterLevel) > 50 ? "Siaga" : "Aman"
       };
 
-      // KIRIM LAPORAN: Data Laporan + Nama Pelapor
-      // Jika user tidak login (null), default ke "Masyarakat Umum"
+      // 2. KIRIM KE CONTEXT
       addReport(reportData, user?.name || "Masyarakat Umum");
 
-      setStatus("Laporan berhasil dikirim! Data Anda tercatat di sistem BPBD.");
+      setStatus("Laporan berhasil dikirim!");
       
-      // Reset form setelah berhasil
+      // Reset form
       setFormData({
         location: "",
         waterLevel: "",
         description: ""
       });
 
-      // Hilangkan pesan status setelah 4 detik
       setTimeout(() => setStatus(""), 4000);
     }
   };

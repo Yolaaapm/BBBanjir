@@ -33,44 +33,68 @@ export const AuthContextProvider = ({ children }) => {
   });
 
   // 4. Efek Sinkronisasi ke LocalStorage
+  // Setiap kali 'reports' atau 'donations' berubah, langsung simpan ke storage
   useEffect(() => {
     localStorage.setItem("flood_reports", JSON.stringify(reports));
-    localStorage.setItem("flood_donations", JSON.stringify(donations));
-  }, [reports, donations]);
+  }, [reports]);
 
-  // 5. Fungsi Manajemen Laporan (Mencatat Pelapor)
+  useEffect(() => {
+    localStorage.setItem("flood_donations", JSON.stringify(donations));
+  }, [donations]);
+
+  // 5. Fungsi Manajemen Laporan (Sinkronisasi User ke Admin)
+ // 5. Fungsi Manajemen Laporan (DENGAN PROTEKSI DOUBLE SUBMIT)
   const addReport = (newReport, reporterName) => {
+    const timestamp = Date.now();
+    
     const reportData = {
       ...newReport,
-      id: Date.now(),
-      reporter: reporterName || "Anonim", // Mencatat siapa yang melapor
+      // Gunakan ID yang sangat unik
+      id: `${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
+      reporter: reporterName || "Anonim",
       date: new Date().toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       }),
+      createdAt: timestamp // Penanda waktu untuk pengecekan
     };
-    setReports((prevReports) => [...prevReports, reportData]);
+
+    setReports((prevReports) => {
+      // CEK APAKAH SUDAH ADA LAPORAN YANG SAMA DALAM 2 DETIK TERAKHIR
+      // Ini adalah "Satpam" agar tidak terjadi double input
+      const isDuplicate = prevReports.some(r => 
+        r.lokasi === reportData.lokasi && 
+        (timestamp - r.createdAt) < 2000 // Jika selisihnya kurang dari 2 detik
+      );
+
+      if (isDuplicate) {
+        console.warn("Laporan ganda terdeteksi dan diblokir!");
+        return prevReports; // Jangan tambahkan apa-apa
+      }
+
+      return [reportData, ...prevReports];
+    });
   };
 
-  // 6. Fungsi Hapus Laporan
+  // 6. Fungsi Hapus Laporan (Bisa digunakan Admin)
   const deleteReport = (id) => {
     setReports((prevReports) => prevReports.filter((report) => report.id !== id));
   };
 
-  // 7. Fungsi Manajemen Donasi (Mencatat Nama Donatur)
+  // 7. Fungsi Manajemen Donasi
   const addDonation = (amount, donorName) => {
     const donationData = {
       id: Date.now(),
       amount: parseInt(amount),
-      donor: donorName || "Anonim", // Mencatat siapa yang berdonasi
+      donor: donorName || "Anonim",
       date: new Date().toLocaleDateString("id-ID", {
         day: "numeric",
         month: "long",
         year: "numeric",
       }),
     };
-    setDonations((prev) => [...prev, donationData]);
+    setDonations((prev) => [donationData, ...prev]);
   };
 
   // Hitung total nominal donasi secara real-time
