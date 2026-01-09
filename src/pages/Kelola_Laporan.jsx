@@ -1,11 +1,28 @@
 import React, { useState, useContext } from "react";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 import MainLayout from "../components/Layouts/MainLayout";
 import Card from "../components/Elements/Card";
 import Button from "../components/Elements/Button";
 import { AuthContext } from "../context/authContext";
 
+// --- CUSTOM PIN MERAH (Gaya Google Maps) ---
+const googleIcon = new L.DivIcon({
+  html: `<div style="position: relative;">
+            <div style="background-color: #EA4335; width: 22px; height: 22px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+            <div style="position: absolute; top: 18px; left: 8px; width: 6px; height: 6px; background-color: #EA4335; transform: rotate(45deg); border-right: 3px solid white; border-bottom: 3px solid white;"></div>
+         </div>`,
+  className: "custom-google-marker",
+  iconSize: [22, 22],
+  iconAnchor: [11, 26],
+});
+
 const Kelola_Laporan = () => {
     const { user, reports = [], addReport, deleteReport } = useContext(AuthContext);
+
+    // State untuk Modal Peta
+    const [selectedCoord, setSelectedCoord] = useState(null);
 
     const [formData, setFormData] = useState({
         lokasi: "",
@@ -33,7 +50,6 @@ const Kelola_Laporan = () => {
         try {
             setIsSubmitting(true);
 
-            // STRUKTUR DATA HARUS KONSISTEN
             const newReportData = {
                 lokasi: formData.lokasi,          
                 debit: formData.debit + " CM",    
@@ -65,6 +81,59 @@ const Kelola_Laporan = () => {
         <MainLayout>
             <div className="max-w-6xl mx-auto space-y-8 pb-10 px-4">
                 
+                {/* MODAL PETA PREMIUM - GOOGLE MAPS STYLE */}
+                {selectedCoord && (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 transition-all">
+                        <div className="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20 animate-in zoom-in duration-300">
+                            {/* Header Modal */}
+                            <div className="p-6 flex justify-between items-center border-b">
+                                <div>
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tight">Lokasi Kejadian</h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                        Koordinat: {selectedCoord.lat.toFixed(5)}, {selectedCoord.lng.toFixed(5)}
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => setSelectedCoord(null)} 
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white transition-all font-bold"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Area Map Google */}
+                            <div className="h-[400px] w-full relative">
+                                <MapContainer center={selectedCoord} zoom={16} style={{ height: "100%", width: "100%" }}>
+                                    {/* GOOGLE MAPS ROADMAP TILE */}
+                                    <TileLayer 
+                                        url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                                        attribution='&copy; Google Maps'
+                                    />
+                                    <Marker position={selectedCoord} icon={googleIcon} />
+                                </MapContainer>
+                                
+                                {/* Badge Overlay */}
+                                <div className="absolute bottom-6 left-6 z-[500]">
+                                    <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border border-white text-[10px] font-black text-slate-700 uppercase tracking-widest">
+                                        Google Maps View
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer Modal */}
+                            <div className="p-4 bg-slate-50">
+                                <button 
+                                    onClick={() => setSelectedCoord(null)}
+                                    className="w-full bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-700 transition-all shadow-lg"
+                                >
+                                    Tutup Pratinjau
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Form Input (Khusus Masyarakat) */}
                 {user?.role !== "admin" && (
                     <Card title="Input Laporan Banjir Baru">
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
@@ -115,6 +184,7 @@ const Kelola_Laporan = () => {
                     </Card>
                 )}
 
+                {/* Tabel Laporan */}
                 <div className="bg-slate-200 rounded-[40px] p-6 md:p-10 shadow-inner">
                     <div className="flex justify-between items-center mb-8 px-4">
                         <h2 className="text-2xl md:text-3xl font-black text-slate-800 uppercase tracking-tighter text-center w-full">
@@ -148,17 +218,25 @@ const Kelola_Laporan = () => {
                                                 </td>
                                             )}
                                             
-                                            {/* KOLOM LOKASI */}
-                                            <td className="p-4 border-r border-slate-100 font-semibold uppercase text-xs text-left">
-                                                {report.lokasi || report.location || "Lokasi Kosong"}
+                                            <td className="p-4 border-r border-slate-100 text-left">
+                                                <div className="font-semibold uppercase text-xs mb-1">
+                                                    {report.lokasi || report.location || "Lokasi Kosong"}
+                                                </div>
+                                                {/* TOMBOL LIHAT PETA GOOGLE */}
+                                                {(report.koordinat || report.coordinate) && (
+                                                    <button 
+                                                        onClick={() => setSelectedCoord(report.koordinat || report.coordinate)}
+                                                        className="text-[10px] font-black text-blue-600 hover:text-blue-800 flex items-center gap-1 uppercase tracking-tighter transition-all"
+                                                    >
+                                                        <span className="text-lg">📍</span> Lihat di Peta
+                                                    </button>
+                                                )}
                                             </td>
 
-                                            {/* KOLOM DEBIT - PERBAIKAN: Jangan biarkan deskripsi masuk sini */}
                                             <td className="p-4 border-r border-slate-100 font-medium">
                                                 {report.debit || report.waterLevel || "-"}
                                             </td>
 
-                                            {/* KOLOM STATUS */}
                                             <td className="p-4 border-r border-slate-100">
                                                 <span className={`px-3 py-1 rounded-full font-bold text-[10px] uppercase ${
                                                     report.status === "Bahaya" ? "bg-red-500 text-white" : 
@@ -168,7 +246,6 @@ const Kelola_Laporan = () => {
                                                 </span>
                                             </td>
 
-                                            {/* KOLOM DESKRIPSI - PERBAIKAN: HANYA ambil deskripsi/description */}
                                             <td className="p-4 text-left text-slate-600 italic">
                                                 {report.deskripsi || report.description || "-"}
                                             </td>

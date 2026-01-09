@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  // 1. Inisialisasi State User dari LocalStorage
+  // 1. Inisialisasi State User
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user_data");
     const token = localStorage.getItem("token");
@@ -13,27 +13,24 @@ export const AuthContextProvider = ({ children }) => {
       try {
         return jwtDecode(token);
       } catch (err) {
-        console.error("Invalid token", err);
         localStorage.removeItem("token");
       }
     }
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  // 2. Inisialisasi State Laporan Global
+  // 2. Inisialisasi State Laporan (Mendukung data Koordinat)
   const [reports, setReports] = useState(() => {
     const savedReports = localStorage.getItem("flood_reports");
     return savedReports ? JSON.parse(savedReports) : [];
   });
 
-  // 3. Inisialisasi State Donasi Global
   const [donations, setDonations] = useState(() => {
     const savedDonations = localStorage.getItem("flood_donations");
     return savedDonations ? JSON.parse(savedDonations) : [];
   });
 
-  // 4. Efek Sinkronisasi ke LocalStorage
-  // Setiap kali 'reports' atau 'donations' berubah, langsung simpan ke storage
+  // Sinkronisasi ke LocalStorage
   useEffect(() => {
     localStorage.setItem("flood_reports", JSON.stringify(reports));
   }, [reports]);
@@ -42,14 +39,12 @@ export const AuthContextProvider = ({ children }) => {
     localStorage.setItem("flood_donations", JSON.stringify(donations));
   }, [donations]);
 
-  // 5. Fungsi Manajemen Laporan (Sinkronisasi User ke Admin)
- // 5. Fungsi Manajemen Laporan (DENGAN PROTEKSI DOUBLE SUBMIT)
+  // 5. Fungsi Manajemen Laporan (Mendukung Koordinat Peta)
   const addReport = (newReport, reporterName) => {
     const timestamp = Date.now();
     
     const reportData = {
       ...newReport,
-      // Gunakan ID yang sangat unik
       id: `${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
       reporter: reporterName || "Anonim",
       date: new Date().toLocaleDateString("id-ID", {
@@ -57,32 +52,25 @@ export const AuthContextProvider = ({ children }) => {
         month: "long",
         year: "numeric",
       }),
-      createdAt: timestamp // Penanda waktu untuk pengecekan
+      createdAt: timestamp 
     };
 
     setReports((prevReports) => {
-      // CEK APAKAH SUDAH ADA LAPORAN YANG SAMA DALAM 2 DETIK TERAKHIR
-      // Ini adalah "Satpam" agar tidak terjadi double input
+      // Proteksi Double Submit berdasarkan lokasi dan waktu
       const isDuplicate = prevReports.some(r => 
         r.lokasi === reportData.lokasi && 
-        (timestamp - r.createdAt) < 2000 // Jika selisihnya kurang dari 2 detik
+        (timestamp - r.createdAt) < 2000 
       );
 
-      if (isDuplicate) {
-        console.warn("Laporan ganda terdeteksi dan diblokir!");
-        return prevReports; // Jangan tambahkan apa-apa
-      }
-
+      if (isDuplicate) return prevReports;
       return [reportData, ...prevReports];
     });
   };
 
-  // 6. Fungsi Hapus Laporan (Bisa digunakan Admin)
   const deleteReport = (id) => {
     setReports((prevReports) => prevReports.filter((report) => report.id !== id));
   };
 
-  // 7. Fungsi Manajemen Donasi
   const addDonation = (amount, donorName) => {
     const donationData = {
       id: Date.now(),
@@ -97,13 +85,10 @@ export const AuthContextProvider = ({ children }) => {
     setDonations((prev) => [donationData, ...prev]);
   };
 
-  // Hitung total nominal donasi secara real-time
   const totalDonationAmount = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // 8. Logika Login
   const login = (email, password) => {
     let userData = null;
-
     if (email === "admin@banjir.com" && password === "admin123") {
       userData = { name: "Admin", role: "admin", email: email };
     } 
@@ -121,7 +106,6 @@ export const AuthContextProvider = ({ children }) => {
     return false;
   };
 
-  // 9. Logika Logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user_data");

@@ -27,7 +27,25 @@ html {
   --color-special-red2: #b83016;
 }
 
-/* Mendukung fitur ThemeContext dari FineBank */
-.theme-green { --color-primary: #299d91; }
-.theme-blue { --color-primary: #1e90ff; }
-.theme-purple { --color-primary: #6a5acd; }
+/* --- KONFIGURASI TEMA --- */
+
+.theme-blue { 
+  --color-primary: #1e90ff; 
+}
+
+.theme-green { 
+  --color-primary: #299d91; 
+}
+
+.theme-purple { 
+  --color-primary: #6a5acd; 
+}
+
+/* Efek transisi halus saat pindah tema */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  transition: border-color 0.3s ease;
+}
